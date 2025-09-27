@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddHttpClient();
+builder.Services.AddLogging();
 
 var app = builder.Build();
 
