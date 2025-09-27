@@ -1,0 +1,20 @@
+# Build output directories (applies to ALL projects)
+**/bin/
+**/obj/
+
+# NuGet packages
+**/packages/
+.nuget/
+*.nupkg
+*.nupkg.sha512
+
+# Visual Studio
+.vs/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Debug symbols
+**/*.pdb
+**/*.mdb
