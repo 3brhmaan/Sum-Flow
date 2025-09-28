@@ -1,24 +1,41 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
+﻿using Grpc.Core;
+using RabbitMQ.Client;
 using Sum_gRPC.Protos;
+using System.Text;
+using System.Text.Json;
 
 namespace Sum_gRPC.Services;
 public class AdditionService : Addition.AdditionBase
 {
-    private readonly HttpClient _httpClient;
     private readonly ILogger<AdditionService> _logger;
-    private readonly string baseUrl = "https://localhost:7290/api/accumulator";
 
-    public AdditionService(HttpClient httpClient , ILogger<AdditionService> logger)
+    public AdditionService(ILogger<AdditionService> logger)
     {
-        _httpClient = httpClient;
         _logger = logger;
     }
 
     public async override Task<AddResponse> Add(AddRequest request , ServerCallContext context)
     {
         int sum = request.A + request.B;
-        await _httpClient.PutAsJsonAsync(baseUrl , new { addition = sum });
+
+        var factory = new ConnectionFactory
+        {
+            HostName = "localhost",
+            UserName = "guest",
+            Password = "guest",
+            VirtualHost = "/"
+        };
+
+        var connection = await factory.CreateConnectionAsync();
+        var channel = await connection.CreateChannelAsync();
+
+        await channel.QueueDeclareAsync("accumlator", durable:true, exclusive:false, autoDelete: false);
+
+        var message = JsonSerializer.Serialize(new {value = sum});
+        var body = Encoding.UTF8.GetBytes(message);
+
+        // publish and don't wait
+        channel.BasicPublishAsync("", "accumlator" , body);
 
         _logger.LogInformation($"{request.A} + {request.B} = {sum}");
 

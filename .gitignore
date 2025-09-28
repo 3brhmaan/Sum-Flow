@@ -18,3 +18,4 @@
 # Debug symbols
 **/*.pdb
 **/*.mdb
+/Sum-REST/result.txt
