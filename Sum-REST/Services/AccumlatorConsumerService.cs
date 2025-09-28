@@ -20,39 +20,64 @@ public class AccumlatorConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var factory = new ConnectionFactory
+        while (!stoppingToken.IsCancellationRequested)
         {
-            HostName = "localhost" ,
-            UserName = "guest" ,
-            Password = "guest" ,
-            VirtualHost = "/"
-        };
+            try
+            {
+                var factory = new ConnectionFactory
+                {
+                    HostName = "localhost" ,
+                    UserName = "guest" ,
+                    Password = "guest" ,
+                    VirtualHost = "/"
+                };
 
-        var connection = await factory.CreateConnectionAsync();
-        var channel = await connection.CreateChannelAsync();
+                await using var connection = await factory.CreateConnectionAsync(stoppingToken);
+                await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        await channel.QueueDeclareAsync("accumlator" , durable: true , exclusive: false, autoDelete: false);
+                await channel.QueueDeclareAsync(
+                    queue: "accumlator" ,
+                    durable: true ,
+                    exclusive: false ,
+                    autoDelete: false ,
+                    cancellationToken: stoppingToken
+                );
+                var consumer = new AsyncEventingBasicConsumer(channel);
 
-        var consumer = new AsyncEventingBasicConsumer(channel);
+                consumer.ReceivedAsync += async (model , eventArgs) =>
+                {
+                    try
+                    {
+                        var body = eventArgs.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        var request = JsonSerializer.Deserialize<AccumlatorRequest>(message);
 
-        consumer.ReceivedAsync += async (model , eventArgs) =>
-        {
-            logger.LogInformation($"Current Thread: {Thread.CurrentThread.ManagedThreadId}");
+                        var CurrentAccumlatorString = await accumlatorService.ReadAccumlatorValueAsync();
 
-            var body = eventArgs.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            var request = JsonSerializer.Deserialize<AccumlatorRequest>(message);
+                        int.TryParse(CurrentAccumlatorString , out var currentAccumlatorValue);
 
-            var CurrentAccumlatorString = await accumlatorService.ReadAccumlatorValueAsync();
+                        await accumlatorService.UpdateAccumlatorValueAsync(currentAccumlatorValue + request.value);
 
-            int.TryParse(CurrentAccumlatorString , out var currentAccumlatorValue);
+                        logger.LogInformation($"Current Sum: {currentAccumlatorValue + request.value}");
+                        Console.WriteLine("============================================================");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex , "Error Processing Message");
+                    }
+                };
 
-            await accumlatorService.UpdateAccumlatorValueAsync(currentAccumlatorValue + request.value);
+                await channel.BasicConsumeAsync("accumlator" , true , consumer);
 
-            logger.LogInformation($"Current Sum: {currentAccumlatorValue + request.value}");
-            Console.WriteLine("============================================================");
-        };
+                logger.LogInformation("Consumer started. Waiting for messages...");
 
-        await channel.BasicConsumeAsync("accumlator" , true , consumer);
+                await Task.Delay(Timeout.Infinite , stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex , "Consumer Error, Reconnecting...");
+                await Task.Delay(TimeSpan.FromSeconds(1) , stoppingToken);
+            }
+        }
     }
 }

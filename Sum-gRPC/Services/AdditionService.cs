@@ -1,5 +1,7 @@
 ﻿using Grpc.Core;
 using RabbitMQ.Client;
+using Sum_gRPC.Data;
+using Sum_gRPC.Models;
 using Sum_gRPC.Protos;
 using System.Text;
 using System.Text.Json;
@@ -8,37 +10,25 @@ namespace Sum_gRPC.Services;
 public class AdditionService : Addition.AdditionBase
 {
     private readonly ILogger<AdditionService> _logger;
+    private readonly AppDbContext appDbContext;
 
-    public AdditionService(ILogger<AdditionService> logger)
+    public AdditionService(ILogger<AdditionService> logger , AppDbContext appDbContext)
     {
         _logger = logger;
+        this.appDbContext = appDbContext;
     }
 
     public async override Task<AddResponse> Add(AddRequest request , ServerCallContext context)
     {
-        int sum = request.A + request.B;
-
-        var factory = new ConnectionFactory
+        var message = new OutboxMessage
         {
-            HostName = "localhost",
-            UserName = "guest",
-            Password = "guest",
-            VirtualHost = "/"
+            Content = JsonSerializer.Serialize(new {value = request.A + request.B})
         };
 
-        var connection = await factory.CreateConnectionAsync();
-        var channel = await connection.CreateChannelAsync();
+        appDbContext.OutboxMessages.Add(message);
+        await appDbContext.SaveChangesAsync();
 
-        await channel.QueueDeclareAsync("accumlator", durable:true, exclusive:false, autoDelete: false);
-
-        var message = JsonSerializer.Serialize(new {value = sum});
-        var body = Encoding.UTF8.GetBytes(message);
-
-        // publish and don't wait
-        channel.BasicPublishAsync("", "accumlator" , body);
-
-        _logger.LogInformation($"{request.A} + {request.B} = {sum}");
-
+        int sum = request.A + request.B;
         return new AddResponse { Result = sum };
     }
 }
