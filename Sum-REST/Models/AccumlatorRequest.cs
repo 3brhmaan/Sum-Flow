@@ -2,5 +2,7 @@
 
 public class AccumlatorRequest
 {
-    public int value { get; set; }
+    public int Value { get; set; }
+    public DateTime OccurredOn { get; set; } = DateTime.UtcNow;
+    public DateTime ProcessedOn { get; set; }
 }

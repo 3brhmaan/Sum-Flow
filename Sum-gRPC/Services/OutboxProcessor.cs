@@ -3,6 +3,7 @@ using RabbitMQ.Client;
 using Sum_gRPC.Data;
 using Sum_gRPC.Models;
 using System.Text;
+using System.Text.Json;
 
 namespace Sum_gRPC.Services;
 
@@ -36,9 +37,7 @@ public class OutboxProcessor : BackgroundService
 
                 if (!messages.Any())
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(3) , stoppingToken);
-
-                    logger.LogInformation("No messages in the database, retry again after 1 second...");
+                    logger.LogWarning("No messages in the database, retry again after 1 second...");
                     await Task.Delay(TimeSpan.FromSeconds(1));
 
                     continue;
@@ -84,7 +83,16 @@ public class OutboxProcessor : BackgroundService
                     cancellationToken: ct
                 );
 
-                var body = Encoding.UTF8.GetBytes(message.Content);
+                message.ProcessedOn = DateTime.UtcNow;
+
+                var messageText = JsonSerializer.Serialize(new
+                {
+                    Value = int.Parse(message.Content),
+                    message.OccurredOn,
+                    message.ProcessedOn
+                });
+
+                var body = Encoding.UTF8.GetBytes(messageText);
 
                 await channel.BasicPublishAsync(
                     exchange: "" ,
@@ -93,7 +101,6 @@ public class OutboxProcessor : BackgroundService
                     cancellationToken: ct
                 );
 
-                message.ProcessedOn = DateTime.UtcNow;
                 await appDbContext.SaveChangesAsync(ct);
 
                 logger.LogInformation("Published outbox message {Id} and marked as processed" , message.Id);

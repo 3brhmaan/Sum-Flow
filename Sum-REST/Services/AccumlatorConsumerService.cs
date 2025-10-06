@@ -1,6 +1,7 @@
 ﻿
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Sum_REST.Metrics;
 using Sum_REST.Models;
 using System.Text;
 using System.Text.Json;
@@ -52,14 +53,23 @@ public class AccumlatorConsumerService : BackgroundService
                         var message = Encoding.UTF8.GetString(body);
                         var request = JsonSerializer.Deserialize<AccumlatorRequest>(message);
 
+                        var messageWaitingTimeInQueueSeconds = (DateTime.UtcNow - request.ProcessedOn).TotalSeconds;
+
+                        logger.LogInformation($"Message Waiting Time In Queue: {messageWaitingTimeInQueueSeconds}");
+
+                        ApplicationMetrics.QueueWaitingTime.Record(messageWaitingTimeInQueueSeconds);
+
                         var CurrentAccumlatorString = await accumlatorService.ReadAccumlatorValueAsync();
 
                         int.TryParse(CurrentAccumlatorString , out var currentAccumlatorValue);
 
-                        await accumlatorService.UpdateAccumlatorValueAsync(currentAccumlatorValue + request.value);
+                        await accumlatorService.UpdateAccumlatorValueAsync(currentAccumlatorValue + request.Value);
 
-                        logger.LogInformation($"Current Sum: {currentAccumlatorValue + request.value}");
-                        Console.WriteLine("============================================================");
+                        var requestWholeTimeSeconds = (DateTime.UtcNow - request.OccurredOn).TotalSeconds;
+
+                        logger.LogInformation($"Whole Request Time: {requestWholeTimeSeconds}");
+
+                        ApplicationMetrics.RequestWholeTime.Record(requestWholeTimeSeconds);
                     }
                     catch (Exception ex)
                     {

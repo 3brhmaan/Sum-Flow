@@ -12,6 +12,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "observability", "observability", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "grafana", "grafana", "{0B03186A-B731-432A-BBA3-920C96F9809C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "provisioning", "provisioning", "{05A5F8BE-1754-46D2-9B0C-6EC51BF7C394}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboard-definitions", "dashboard-definitions", "{F1BB1573-D98F-4F0E-8173-3A3F4AED2819}"
+	ProjectSection(SolutionItems) = preProject
+		sum-flow-dashboard.json = sum-flow-dashboard.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboards", "dashboards", "{865F2A9B-80D9-4952-86A5-CFA5C8F91F2F}"
+	ProjectSection(SolutionItems) = preProject
+		dashboards.yml = dashboards.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +48,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0B03186A-B731-432A-BBA3-920C96F9809C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{05A5F8BE-1754-46D2-9B0C-6EC51BF7C394} = {0B03186A-B731-432A-BBA3-920C96F9809C}
+		{F1BB1573-D98F-4F0E-8173-3A3F4AED2819} = {0B03186A-B731-432A-BBA3-920C96F9809C}
+		{865F2A9B-80D9-4952-86A5-CFA5C8F91F2F} = {05A5F8BE-1754-46D2-9B0C-6EC51BF7C394}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA51C575-EC1D-419A-A3A2-C9E5610960E9}

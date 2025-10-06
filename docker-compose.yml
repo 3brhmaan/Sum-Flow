@@ -1,0 +1,102 @@
+version: '3.8'
+
+configs:
+  prometheus_config:
+    content: |
+      global:
+        scrape_interval: 2s
+      scrape_configs:
+        - job_name: 'otel-collector'
+          static_configs:
+            - targets: ['otel-collector:8889']
+
+  otel_collector_config:
+    content: |
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+      processors:
+        batch:
+      exporters:
+        prometheus:
+          endpoint: "0.0.0.0:8889"
+      service:
+        pipelines:
+          metrics:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [prometheus]
+
+services:
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    configs:
+      - source: otel_collector_config
+        target: /etc/otel-collector-config.yaml
+        uid: '0'
+        gid: '0'
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exposed here
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+        uid: '0'
+        gid: '0'
+    volumes:
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboard-definitions:/var/lib/grafana/dashboards/dashboard-definitions
+    depends_on:
+      - prometheus
+
+  # RabbitMQ
+  rabbitmq:
+    container_name: "rabbitmq" 
+    image: rabbitmq:3.8-management-alpine
+    environment: 
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      # RabbitMQ instance
+      - '5672:5672'
+      # Web Interface
+      - '15672:15672' 
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  

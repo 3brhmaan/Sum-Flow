@@ -1,14 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Sum_REST</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>Sum_REST</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="OpenTelemetry" Version="1.12.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="1.12.0-beta.1" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+		<PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
+	</ItemGroup>
 
 </Project>

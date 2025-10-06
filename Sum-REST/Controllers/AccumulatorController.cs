@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Sum_REST.Models;
 using Sum_REST.Services;
 
 namespace Sum_REST.Controllers;
 
-[Route("api/accumulator")]
+[Route("accumulator")]
 [ApiController]
 public class AccumulatorController : ControllerBase
 {

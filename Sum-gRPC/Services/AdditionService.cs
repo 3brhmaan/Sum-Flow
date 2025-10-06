@@ -22,7 +22,7 @@ public class AdditionService : Addition.AdditionBase
     {
         var message = new OutboxMessage
         {
-            Content = JsonSerializer.Serialize(new {value = request.A + request.B})
+            Content = (request.A + request.B).ToString()
         };
 
         appDbContext.OutboxMessages.Add(message);
