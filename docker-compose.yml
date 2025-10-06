@@ -132,6 +132,15 @@ services:
     volumes:
       - sqlserver-data:/var/opt/mssql
 
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    volumes:
+      - ./k6-tests:/k6-tests
+    working_dir: /k6-tests
+    
+
+
 volumes:
   prometheus-data:
   grafana-data:

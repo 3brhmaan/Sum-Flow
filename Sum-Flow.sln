@@ -29,6 +29,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboards", "dashboards", 
 		dashboards.yml = dashboards.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k6-tests", "k6-tests", "{4F4B9C8E-5677-463D-828E-B87CB33FA0D4}"
+	ProjectSection(SolutionItems) = preProject
+		grpc-test.js = grpc-test.js
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +58,7 @@ Global
 		{05A5F8BE-1754-46D2-9B0C-6EC51BF7C394} = {0B03186A-B731-432A-BBA3-920C96F9809C}
 		{F1BB1573-D98F-4F0E-8173-3A3F4AED2819} = {0B03186A-B731-432A-BBA3-920C96F9809C}
 		{865F2A9B-80D9-4952-86A5-CFA5C8F91F2F} = {05A5F8BE-1754-46D2-9B0C-6EC51BF7C394}
+		{4F4B9C8E-5677-463D-828E-B87CB33FA0D4} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA51C575-EC1D-419A-A3A2-C9E5610960E9}
