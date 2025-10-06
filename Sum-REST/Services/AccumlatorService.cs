@@ -6,6 +6,8 @@ public class AccumlatorService
     public AccumlatorService(IWebHostEnvironment environment)
     {
         _filePath = Path.Combine(environment.ContentRootPath , "result.txt");
+
+        EnsureResultFileExist();
     }
 
     public async Task<string> ReadAccumlatorValueAsync()
@@ -18,5 +20,13 @@ public class AccumlatorService
     public async Task UpdateAccumlatorValueAsync(int newAccumlatorValue)
     {
         await File.WriteAllTextAsync(_filePath , newAccumlatorValue.ToString());
+    }
+
+    private void EnsureResultFileExist()
+    {
+        if (!File.Exists(_filePath))
+        {
+            File.WriteAllText(_filePath , "0");
+        }
     }
 }

@@ -27,7 +27,7 @@ public class AccumlatorConsumerService : BackgroundService
             {
                 var factory = new ConnectionFactory
                 {
-                    HostName = "localhost" ,
+                    HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost" ,
                     UserName = "guest" ,
                     Password = "guest" ,
                     VirtualHost = "/"
@@ -86,7 +86,7 @@ public class AccumlatorConsumerService : BackgroundService
             catch (Exception ex)
             {
                 logger.LogError(ex , "Consumer Error, Reconnecting...");
-                await Task.Delay(TimeSpan.FromSeconds(1) , stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2) , stoppingToken);
             }
         }
     }

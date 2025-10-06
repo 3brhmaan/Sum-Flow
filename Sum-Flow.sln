@@ -10,12 +10,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "observability", "observability", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		docker-compose.yml = docker-compose.yml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "grafana", "grafana", "{0B03186A-B731-432A-BBA3-920C96F9809C}"
 EndProject
@@ -50,6 +48,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
 		{0B03186A-B731-432A-BBA3-920C96F9809C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{05A5F8BE-1754-46D2-9B0C-6EC51BF7C394} = {0B03186A-B731-432A-BBA3-920C96F9809C}
 		{F1BB1573-D98F-4F0E-8173-3A3F4AED2819} = {0B03186A-B731-432A-BBA3-920C96F9809C}

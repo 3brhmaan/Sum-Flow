@@ -9,7 +9,6 @@ configs:
         - job_name: 'otel-collector'
           static_configs:
             - targets: ['otel-collector:8889']
-
   otel_collector_config:
     content: |
       receivers:
@@ -32,7 +31,6 @@ configs:
             exporters: [prometheus]
 
 services:
-  # OpenTelemetry Collector
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
@@ -47,7 +45,6 @@ services:
       - "4318:4318"   # OTLP HTTP receiver
       - "8889:8889"   # Prometheus metrics exposed here
 
-  # Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -66,7 +63,6 @@ services:
     depends_on:
       - otel-collector
 
-  # Grafana
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -83,7 +79,6 @@ services:
     depends_on:
       - prometheus
 
-  # RabbitMQ
   rabbitmq:
     container_name: "rabbitmq" 
     image: rabbitmq:3.8-management-alpine
@@ -94,9 +89,53 @@ services:
       # RabbitMQ instance
       - '5672:5672'
       # Web Interface
-      - '15672:15672' 
+      - '15672:15672'
+
+  grpc-service:
+    container_name: sum-grpc
+    build:
+      context: .
+      dockerfile: Sum-gRPC/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "5122:8080"   # HTTP only
+    depends_on:
+      otel-collector:
+        condition: service_started
+      sqlserver:
+        condition: service_started
+         
+  rest-service:
+    container_name: sum-rest
+    build:
+      context: .
+      dockerfile: Sum-REST/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "5138:8080"   # HTTP only
+    depends_on:
+      - otel-collector
+      - rabbitmq
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
 
 volumes:
   prometheus-data:
   grafana-data:
-  
+  sqlserver-data:  

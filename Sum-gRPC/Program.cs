@@ -1,8 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Sum_gRPC.Data;
 using Sum_gRPC.Services;
 
@@ -18,29 +14,19 @@ builder.Services.AddDbContext<AppDbContext>(opts =>
     );
 });
 builder.Services.AddHostedService<OutboxProcessor>();
-
-
-//builder.Services.AddOpenTelemetry()
-//    .WithMetrics(builder =>
-//    {
-//        builder.SetResourceBuilder(
-//            ResourceBuilder.CreateDefault().AddService("Sum-Flow")
-//        );
-//        builder.AddMeter("Custom-Meter");
-
-//        builder.AddAspNetCoreInstrumentation();
-//        builder.AddRuntimeInstrumentation();
-//        builder.AddProcessInstrumentation();
-
-//        builder.AddOtlpExporter(opts =>
-//        {
-//            opts.Endpoint = new Uri("http://localhost:4317");
-//        });
-//    });
+builder.Services.AddGrpcReflection();
 
 var app = builder.Build();
 
+// Apply migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate(); 
+}
+
 // Configure the HTTP request pipeline.
 app.MapGrpcService<AdditionService>();
+app.MapGrpcReflectionService();
 
 app.Run();
