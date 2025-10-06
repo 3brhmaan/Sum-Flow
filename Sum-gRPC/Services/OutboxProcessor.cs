@@ -66,7 +66,7 @@ public class OutboxProcessor : BackgroundService
             {
                 var factory = new ConnectionFactory
                 {
-                    HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost" ,
+                    HostName = "rabbitmq" ,
                     UserName = "guest" ,
                     Password = "guest" ,
                     VirtualHost = "/"

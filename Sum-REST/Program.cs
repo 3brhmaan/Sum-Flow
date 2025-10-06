@@ -24,7 +24,7 @@ builder.Services.AddOpenTelemetry()
 
         builder.AddOtlpExporter(opts =>
         {
-            var endpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://localhost:4317";
+            var endpoint = "http://otel-collector:4317";
             opts.Endpoint = new Uri(endpoint);
         });
     });

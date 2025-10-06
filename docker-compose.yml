@@ -99,7 +99,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - RABBITMQ_HOST=rabbitmq
     ports:
       - "5122:8080"   # HTTP only
     depends_on:
@@ -116,8 +115,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - RABBITMQ_HOST=rabbitmq
     ports:
       - "5138:8080"   # HTTP only
     depends_on:
