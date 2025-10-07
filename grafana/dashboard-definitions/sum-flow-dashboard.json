@@ -120,12 +120,7 @@
       "id": 8,
       "options": {
         "legend": {
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ],
+          "calcs": ["lastNotNull", "min", "max", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -155,9 +150,7 @@
         {
           "id": "labelsToFields",
           "options": {
-            "keepLabels": [
-              "state"
-            ],
+            "keepLabels": ["state"],
             "valueLabel": "state"
           }
         }
@@ -236,12 +229,7 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ],
+          "calcs": ["lastNotNull", "min", "max", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -310,9 +298,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -385,9 +371,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -428,7 +412,7 @@
           },
           "fieldMinMax": false,
           "mappings": [],
-          "max": 1.5,
+          "max": 2,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -439,11 +423,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.6
+                "value": 1
               },
               {
                 "color": "red",
-                "value": 1.1
+                "value": 1.5
               }
             ]
           },
@@ -463,9 +447,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -509,10 +491,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -533,9 +511,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -575,5 +551,5 @@
   "timezone": "browser",
   "title": "Sum Flow Dashboards",
   "uid": "ad2t54n",
-  "version": 14
+  "version": 15
 }
