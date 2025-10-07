@@ -11,6 +11,7 @@ public class OutboxProcessor : BackgroundService
 {
     private readonly ILogger<OutboxProcessor> logger;
     private readonly IServiceScopeFactory scopeFactory;
+    private IConnection rabbitConnection;
 
     public OutboxProcessor(ILogger<OutboxProcessor> logger , IServiceScopeFactory scopeFactory)
     {
@@ -20,10 +21,20 @@ public class OutboxProcessor : BackgroundService
 
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("OutboxProcessor Started...");
-
         using var scope = scopeFactory.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var factory = new ConnectionFactory
+        {
+            HostName = "rabbitmq" ,
+            UserName = "guest" ,
+            Password = "guest" ,
+            VirtualHost = "/"
+        };
+
+        rabbitConnection = await factory.CreateConnectionAsync(stoppingToken);
+
+        logger.LogInformation("OutboxProcessor Started...");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -32,7 +43,7 @@ public class OutboxProcessor : BackgroundService
                 var messages = await appDbContext.OutboxMessages
                     .Where(x => x.ProcessedOn == null)
                     .OrderBy(x => x.OccurredOn)
-                    .Take(10)
+                    .Take(50)
                     .ToListAsync(stoppingToken);
 
                 if (!messages.Any())
@@ -43,10 +54,10 @@ public class OutboxProcessor : BackgroundService
                     continue;
                 }
 
-                foreach (var message in messages)
-                {
-                    await PublishWithRetryAsync(message , stoppingToken , appDbContext);
-                }
+                var tasks = messages.Select(msg => PublishWithRetryAsync(msg , stoppingToken));
+                await Task.WhenAll(tasks);
+                await appDbContext.SaveChangesAsync(stoppingToken);
+
             }
             catch (Exception ex)
             {
@@ -56,7 +67,17 @@ public class OutboxProcessor : BackgroundService
         }
     }
 
-    private async Task PublishWithRetryAsync(OutboxMessage message , CancellationToken ct , AppDbContext appDbContext)
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (rabbitConnection?.IsOpen == true)
+            await rabbitConnection.CloseAsync();
+
+        await rabbitConnection!.DisposeAsync();
+
+        await base.StopAsync(cancellationToken);
+    }
+
+    private async Task PublishWithRetryAsync(OutboxMessage message , CancellationToken ct )
     {
         int maxRetries = 3;
 
@@ -64,16 +85,7 @@ public class OutboxProcessor : BackgroundService
         {
             try
             {
-                var factory = new ConnectionFactory
-                {
-                    HostName = "rabbitmq" ,
-                    UserName = "guest" ,
-                    Password = "guest" ,
-                    VirtualHost = "/"
-                };
-
-                await using var connection = await factory.CreateConnectionAsync(ct);
-                await using var channel = await connection.CreateChannelAsync(cancellationToken: ct);
+                await using var channel = await rabbitConnection.CreateChannelAsync(cancellationToken: ct);
 
                 await channel.QueueDeclareAsync(
                     queue: "accumlator" ,
@@ -87,8 +99,8 @@ public class OutboxProcessor : BackgroundService
 
                 var messageText = JsonSerializer.Serialize(new
                 {
-                    Value = int.Parse(message.Content),
-                    message.OccurredOn,
+                    Value = int.Parse(message.Content) ,
+                    message.OccurredOn ,
                     message.ProcessedOn
                 });
 
@@ -100,8 +112,6 @@ public class OutboxProcessor : BackgroundService
                     body: body ,
                     cancellationToken: ct
                 );
-
-                await appDbContext.SaveChangesAsync(ct);
 
                 logger.LogInformation("Published outbox message {Id} and marked as processed" , message.Id);
 

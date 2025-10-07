@@ -23,6 +23,9 @@ public class AccumlatorConsumerService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var channels = new List<IChannel>();
+            var consumers = new List<AsyncEventingBasicConsumer>();
+
             try
             {
                 var factory = new ConnectionFactory
@@ -34,50 +37,63 @@ public class AccumlatorConsumerService : BackgroundService
                 };
 
                 await using var connection = await factory.CreateConnectionAsync(stoppingToken);
-                await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-                await channel.QueueDeclareAsync(
-                    queue: "accumlator" ,
-                    durable: true ,
-                    exclusive: false ,
-                    autoDelete: false ,
-                    cancellationToken: stoppingToken
-                );
-                var consumer = new AsyncEventingBasicConsumer(channel);
-
-                consumer.ReceivedAsync += async (model , eventArgs) =>
+                for (int i = 0 ; i < 50 ; i++)
                 {
-                    try
+                    var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+                    channels.Add(channel);
+
+                    await channel.QueueDeclareAsync(
+                        queue: "accumlator" ,
+                        durable: true ,
+                        exclusive: false ,
+                        autoDelete: false ,
+                        cancellationToken: stoppingToken
+                    );
+
+                    // fair dispatch
+                    await channel.BasicQosAsync(prefetchSize: 0 , prefetchCount: 1 , global: false);
+
+                    var consumer = new AsyncEventingBasicConsumer(channel);
+                    consumers.Add(consumer);
+
+                    var consumerId = i;
+
+                    consumer.ReceivedAsync += async (model , eventArgs) =>
                     {
-                        var body = eventArgs.Body.ToArray();
-                        var message = Encoding.UTF8.GetString(body);
-                        var request = JsonSerializer.Deserialize<AccumlatorRequest>(message);
+                        try
+                        {
+                            var body = eventArgs.Body.ToArray();
+                            var message = Encoding.UTF8.GetString(body);
+                            var request = JsonSerializer.Deserialize<AccumlatorRequest>(message);
 
-                        var messageWaitingTimeInQueueSeconds = (DateTime.UtcNow - request.ProcessedOn).TotalSeconds;
+                            var messageWaitingTimeInQueueSeconds = (DateTime.UtcNow - request.ProcessedOn).TotalSeconds;
+                            ApplicationMetrics.QueueWaitingTime.Record(messageWaitingTimeInQueueSeconds);
 
-                        logger.LogInformation($"Message Waiting Time In Queue: {messageWaitingTimeInQueueSeconds}");
+                            await accumlatorService.AddAsync(request.Value);
 
-                        ApplicationMetrics.QueueWaitingTime.Record(messageWaitingTimeInQueueSeconds);
+                            var requestProcessedOn = DateTime.UtcNow;
+                            var requestWholeTimeSeconds = (requestProcessedOn - request.OccurredOn).TotalSeconds;
 
-                        var CurrentAccumlatorString = await accumlatorService.ReadAccumlatorValueAsync();
+                            logger.LogInformation(
+                                $"Consume Id: {consumerId}\nTime Details:\n\tRequest Whole Time: {requestWholeTimeSeconds}\n\tMessage Waiting Time In Queue: {messageWaitingTimeInQueueSeconds}"
+                            );
 
-                        int.TryParse(CurrentAccumlatorString , out var currentAccumlatorValue);
+                            ApplicationMetrics.RequestWholeTime.Record(requestWholeTimeSeconds);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex , "Error Processing Message");
+                        }
+                    };
 
-                        await accumlatorService.UpdateAccumlatorValueAsync(currentAccumlatorValue + request.Value);
-
-                        var requestWholeTimeSeconds = (DateTime.UtcNow - request.OccurredOn).TotalSeconds;
-
-                        logger.LogInformation($"Whole Request Time: {requestWholeTimeSeconds}");
-
-                        ApplicationMetrics.RequestWholeTime.Record(requestWholeTimeSeconds);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex , "Error Processing Message");
-                    }
-                };
-
-                await channel.BasicConsumeAsync("accumlator" , true , consumer);
+                    await channel.BasicConsumeAsync(
+                        queue: "accumlator" ,
+                        autoAck: true ,
+                        consumer: consumer ,
+                        cancellationToken: stoppingToken
+                    );
+                }
 
                 logger.LogInformation("Consumer started. Waiting for messages...");
 
@@ -87,6 +103,21 @@ public class AccumlatorConsumerService : BackgroundService
             {
                 logger.LogError(ex , "Consumer Error, Reconnecting...");
                 await Task.Delay(TimeSpan.FromSeconds(2) , stoppingToken);
+            }
+            finally
+            {
+                foreach (var channel in channels)
+                {
+                    try
+                    {
+                        await channel.CloseAsync();
+                        await channel.DisposeAsync();
+                    }
+                    catch
+                    {
+
+                    }
+                }
             }
         }
     }
